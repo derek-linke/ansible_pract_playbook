@@ -1,0 +1,114 @@
+---
+- name: Loadbalancer status
+  hosts: loadbalancer
+  become: true
+  tasks:
+    - name: Verify nginx service
+      command: service nginx status
+      tags: stack_status
+
+    - name: verify nginx is listening on 80
+      wait_for:
+        port: 80
+        timeout: 20
+      tags: stack_status
+
+- name: Webserver status
+  hosts: webserver
+  become: true
+  tasks:
+    - name: Verify apache2 service
+      command: service apache2 status
+      tags: stack_status
+
+    - name: verify apache2 is listening on 80
+      wait_for:
+        port: 80
+        timeout: 20
+      tags: stack_status
+
+- name: Verify Database status
+  hosts: database
+  become: true
+  tasks:
+    - name: Verify mysql service
+      command: service mysql status
+      tags: stack_status
+
+    - name: DB IP Verification
+      debug:
+        msg: "{{ groups.database }}"
+
+    - name: verify mysql is listening on 3306
+      wait_for:
+        host: 192.168.135.121 
+        port: 3306
+        timeout: 20
+      tags: stack_status
+
+- name: Control Verify end to end
+  hosts: controlcenter
+  tasks:
+    - name: "Verify end to end response load balancer"
+      uri:
+        url: "http://{{item}}"
+        return_content: yes
+      with_items: "{{ groups.loadbalancer }}"
+      register: lb_index
+      tags: stack_status
+
+    - name: Check LB Status
+      fail:
+        msg: "index failed to return content"
+      when: "'Hello, from sunny' not in item.content"
+      with_items: "{{lb_index.results}}"
+      tags: stack_status
+
+    - name: "Verify LB to DB end to end db response"
+      uri:
+        url: "http://{{item}}/db"
+        return_content: yes
+      with_items: "{{ groups.loadbalancer }}"
+      register: lb_db
+      tags: stack_status
+
+    - name: Check LB to DB Status
+      fail:
+        msg: "db failed to return content"
+      when: "'Database Connected from' not in item.content"
+      with_items: "{{lb_db.results}}"
+      tags: stack_status
+  
+- name: Loadbalancer backend response
+  hosts: loadbalancer
+  tasks:
+    - name: Verify LB to APP backend response
+      uri:
+        url: "http://{{item}}"
+        return_content: yes
+      with_items: "{{ groups.webserver }}"
+      register: app_index
+      tags: stack_status
+
+    - name: Check LB to APP Status
+      fail:
+        msg: "index failed to return content"
+      when: "'Hello, from sunny' not in item.content"
+      with_items: "{{app_index.results}}"
+      tags: stack_status
+
+    - name: Verify App to DB response
+      uri:
+        url: "http://{{item}}/db"
+        return_content: yes
+      with_items: "{{ groups.webserver }}"
+      register: app_db
+      tags: stack_status
+
+    - name: Check App to DB Status
+      fail:
+        msg: "db failed to return content"
+      when: "'Database Connected from' not in item.content"
+      with_items: "{{app_db.results}}"
+      tags: stack_status
+

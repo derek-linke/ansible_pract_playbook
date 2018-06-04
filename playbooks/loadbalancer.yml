@@ -1,0 +1,9 @@
+---
+- name: LoadBalancer Setup
+  hosts: loadbalancer
+  become: true
+  gather_facts: false
+
+  roles:
+    - nginx
+

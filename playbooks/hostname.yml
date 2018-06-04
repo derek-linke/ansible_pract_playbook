@@ -1,0 +1,7 @@
+---
+- name: Hostnames
+  hosts: all
+
+  tasks:
+    - name: Display hostnames
+      command: hostname

@@ -1,0 +1,13 @@
+---
+- name: Web Server Setup
+  hosts: tag_Name_LB_DRL,tag_Name_APP_DRL,tag_Name_DB_DRL
+  become: true
+  gather_facts: no
+ 
+  tasks:
+  
+    - name: Install Python
+      raw: test -e /usr/bin/python || (apt-get -y update && apt-get install -y python-minimal)
+  
+
+

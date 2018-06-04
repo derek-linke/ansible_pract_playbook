@@ -1,0 +1,9 @@
+---
+- name: Update control server
+  hosts: controlcenter
+  become: true
+  gather_facts: false
+
+  roles:
+    - control  
+

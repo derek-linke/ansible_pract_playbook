@@ -1,0 +1,6 @@
+---
+
+# Get roles from github repository
+
+- src: https://github.com/derek-linke/ansible_pract_roles
+
